@@ -50,7 +50,9 @@ The following **additional** features are implemented:
 
 Here's a walkthrough of implemented user stories:
 
-<img src='http://i.imgur.com/lEc1PIz.gif' width='300'/>
+<img src='http://imgur.com/7Dx7snl.gif' width='300'/>
+
+Another link which Github throws an error with Content Limit exceeded: http://i.imgur.com/lEc1PIz.gif
 
 ## Notes
 
