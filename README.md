@@ -44,6 +44,7 @@ The following **additional** features are implemented:
 * [X] User can go to Profile from Detail View 
   * [X] If in Profile View already, User should not be able to launch the Same profile 
 * [X] Used Cursor to load data into RecyclerView 
+* [X] Used Palette Library to set the Toolbar and Status Bar color based on User's Profile Banner Image (Also if it's too light to diaply text, switch to default accent color and status bar color)
 
 ## Video Walkthrough
 
@@ -65,6 +66,7 @@ Describe any challenges encountered while building the app.
 - [Timber](https://github.com/JakeWharton/timber) - Logging Library 
 - [Stetho](http://facebook.github.io/stetho/) - Debug bridge for Android applications
 - [Parceler](http://parceler.org/) - Android Parcelables made easy through code generation
+- [Palette](https://developer.android.com/reference/android/support/v7/graphics/Palette.html) - Library to extract prominent colors from an image 
 
 ## License
 
