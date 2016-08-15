@@ -13,10 +13,13 @@ public class Constants {
     public static final String LOGGED_IN_USER_NAME = "LOGGED_IN_USER_NAME";
     public static final String LOGGED_IN_USER_PROFILE = "LOGGED_IN_USER_PROFILE";
     public static final String USERID = "USER_ID";
+    public static final String SCREEN_NAME = "SCREEN_NAME";
 
     public enum Type {
         HOME,
-        NOTIFICATIONS
+        NOTIFICATIONS,
+        USER_TWEETS,
+        LIKES
     }
 
     public enum ComposeType {

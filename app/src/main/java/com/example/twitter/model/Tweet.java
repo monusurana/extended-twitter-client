@@ -38,12 +38,16 @@ public class Tweet extends Model {
     boolean retweeted;
     @Column(name = "was_retweeted")
     boolean was_retweeted;
-    @Column(name = "retweet_user")
-    String retweet_user;
     @Column(name = "timestamp")
     Date timestamp;
     @Column(name = "media_url_https")
     String media_url_https;
+    @Column(name = "user_mentions")
+    boolean user_mentions;
+    @Column(name = "retweetedby_screenname")
+    String retweetedby_screenname;
+    @Column(name = "retweetedby_user")
+    String retweetedby_user;
     @Column(name = "User", onUpdate = Column.ForeignKeyAction.CASCADE, onDelete = Column.ForeignKeyAction.CASCADE)
     User user;
 
@@ -51,20 +55,8 @@ public class Tweet extends Model {
         super();
     }
 
-    public Long getId_str() {
-        return tweetid;
-    }
-
-    public void setId_str(Long id_str) {
-        this.tweetid = id_str;
-    }
-
     public int getRetweet_count() {
         return retweet_count;
-    }
-
-    public void setRetweet_count(int retweet_count) {
-        this.retweet_count = retweet_count;
     }
 
     public String getText() {
@@ -73,14 +65,6 @@ public class Tweet extends Model {
 
     public void setText(String text) {
         this.text = text;
-    }
-
-    public String getCreated_at() {
-        return Utils.getRelativeTimeAgo(created_at);
-    }
-
-    public void setCreated_at(String created_at) {
-        this.created_at = created_at;
     }
 
     public User getUser() {
@@ -103,59 +87,39 @@ public class Tweet extends Model {
         return favorite_count;
     }
 
-    public void setFavorite_count(int favorite_count) {
-        this.favorite_count = favorite_count;
-    }
-
     public boolean isFavorited() {
         return favorited;
     }
 
-    public void setFavorited(boolean favorited) {
-        this.favorited = favorited;
+    public boolean isWasRetweeted() {
+        return was_retweeted;
     }
 
     public boolean isRetweeted() {
         return retweeted;
     }
 
-    public void setRetweeted(boolean retweeted) {
-        this.retweeted = retweeted;
-    }
-
-    public boolean isWas_retweeted() {
-        return was_retweeted;
-    }
-
-    public void setWas_retweeted(boolean was_retweeted) {
-        this.was_retweeted = was_retweeted;
-    }
-
-    public String getRetweet_user() {
-        return retweet_user;
-    }
-
-    public void setRetweet_user(String retweet_user) {
-        this.retweet_user = retweet_user;
-    }
-
     public Date getTimestamp() {
         return timestamp;
-    }
-
-    public void setTimestamp(Date timestamp) {
-        this.timestamp = timestamp;
     }
 
     public String getMedia_url_https() {
         return media_url_https;
     }
 
-    public void setMedia_url_https(String media_url_https) {
-        this.media_url_https = media_url_https;
+    public boolean isUser_mentions() {
+        return user_mentions;
     }
 
-    public Tweet(JSONObject object) {
+    public String getRetweetedby_screenname() {
+        return retweetedby_screenname;
+    }
+
+    public String getRetweetedby_user() {
+        return retweetedby_user;
+    }
+
+    public Tweet(JSONObject object, String screenName) {
         super();
 
         try {
@@ -170,14 +134,24 @@ public class Tweet extends Model {
                 this.tweetid = object.getJSONObject("retweeted_status").getLong("id");
                 this.text = object.getJSONObject("retweeted_status").getString("text");
                 this.user = User.fromJSON(object.getJSONObject("retweeted_status").getJSONObject("user"));
-                this.retweet_user = object.getJSONObject("user").getString("name");
                 this.was_retweeted = true;
+                this.retweetedby_screenname = object.getJSONObject("user").getString("screen_name");
+                this.retweetedby_user = object.getJSONObject("user").getString("name");
             } else {
                 this.tweetid = object.getLong("id");
                 this.text = object.getString("text");
                 this.user = User.findOrCreateFromJson(object.getJSONObject("user"));
                 this.was_retweeted = false;
-                this.retweet_user = null;
+                this.retweetedby_screenname = null;
+                this.retweetedby_user = null;
+            }
+
+            if (screenName != null && screenName != "MENTIONS") {
+                Favorites.saveFavorite(this.tweetid, screenName);
+            }
+
+            if (screenName == "MENTIONS") {
+                user_mentions = true;
             }
 
             if (object.has("extended_entities")) {
@@ -190,11 +164,11 @@ public class Tweet extends Model {
         }
     }
 
-    public static ArrayList<Tweet> fromJSON(JSONArray jsonArray) {
+    public static ArrayList<Tweet> fromJSON(JSONArray jsonArray, String screenName) {
         ArrayList<Tweet> tweets = new ArrayList<Tweet>(jsonArray.length());
 
         for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject tweetJson = null;
+            JSONObject tweetJson;
             try {
                 tweetJson = jsonArray.getJSONObject(i);
             } catch (Exception e) {
@@ -202,53 +176,75 @@ public class Tweet extends Model {
                 continue;
             }
 
-            findOrCreateFromJson(tweetJson);
+            findOrCreateFromJson(tweetJson, screenName);
         }
-
         return tweets;
     }
 
-    public static Tweet findOrCreateFromJson(JSONObject json) {
-        Long rId = null; // get just the remote id
-        try {
-            rId = json.getLong("id");
-
-            Tweet existingUser =
-                    new Select().from(Tweet.class).where("tweetid = ?", rId).executeSingle();
-            if (existingUser != null) {
-                // found and return existing
-                return existingUser;
-            } else {
-                // create and return new user
-                Tweet tweet = new Tweet(json);
-                tweet.save();
-                return tweet;
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        return null;
+    public static Tweet findOrCreateFromJson(JSONObject json, String screenName) {
+        Tweet tweet = new Tweet(json, screenName);
+        tweet.save();
+        return tweet;
     }
 
     public static Cursor fetchResultCursor() {
         From query = new Select()
                 .from(Tweet.class)
-                .orderBy("timestamp DESC")
                 .innerJoin(User.class)
-                .on("Tweets.User=Users.Id");
+                .on("Tweets.User=Users.Id")
+                .orderBy("timestamp DESC");
+
+        Cursor resultCursor = Cache.openDatabase().rawQuery(query.toSql(), query.getArguments());
+        return resultCursor;
+    }
+
+    public static Cursor fetchUserCursor(String screen_name) {
+        From query = new Select()
+                .from(Tweet.class)
+                .innerJoin(User.class)
+                .on("Tweets.User=Users.Id")
+                .where("Tweets.retweetedby_screenname = ? OR Users.screen_name = ?", screen_name, screen_name)
+                .orderBy("timestamp DESC");
+
+        Cursor resultCursor = Cache.openDatabase().rawQuery(query.toSql(), query.getArguments());
+        return resultCursor;
+    }
+
+    public static Cursor fetchLikes(String screen_name) {
+        From query = new Select()
+                .from(Favorites.class)
+                .innerJoin(Tweet.class)
+                .on("Favorites.tweetid=Tweets.tweetid")
+                .innerJoin(User.class)
+                .on("Tweets.User=Users.Id")
+                .where("Favorites.screen_name = ?", screen_name)
+                .orderBy("timestamp DESC");
 
         Cursor resultCursor = Cache.openDatabase().rawQuery(query.toSql(), query.getArguments());
         return resultCursor;
     }
 
     public static Tweet getTweet(Long tweetid) {
-        Tweet existingUser = new Select().from(Tweet.class).where("tweetid = ?", tweetid).executeSingle();
+        Tweet existingUser = new Select()
+                .from(Tweet.class)
+                .where("tweetid = ?", tweetid).executeSingle();
+
         if (existingUser != null) {
-            // found and return existing
             return existingUser;
         }
 
         return null;
+    }
+
+    public static Cursor fetchMentionsCursor() {
+        From query = new Select()
+                .from(Tweet.class)
+                .innerJoin(User.class)
+                .on("Tweets.User=Users.Id")
+                .where("Tweets.user_mentions = 1")
+                .orderBy("timestamp DESC");
+
+        Cursor resultCursor = Cache.openDatabase().rawQuery(query.toSql(), query.getArguments());
+        return resultCursor;
     }
 }

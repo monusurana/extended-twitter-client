@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:name=".app.TwitterApplication"
+        android:name="com.example.twitter.app.TwitterApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -21,17 +21,18 @@
             android:value="1" />
         <meta-data
             android:name="AA_MODELS"
-            android:value="com.example.twitter.model.Mentions, com.example.twitter.model.Tweet, com.example.twitter.model.User" />
+            android:value="com.example.twitter.model.Mentions, com.example.twitter.model.Tweet, com.example.twitter.model.User, com.example.twitter.model.Favorites, com.example.twitter.model.Retweets" />
 
         <activity
-            android:name=".ui.LoginActivity"
+            android:name="com.example.twitter.ui.LoginActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.Login">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
-
+            </intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -43,22 +44,27 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.MainActivity"
+            android:name="com.example.twitter.ui.MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".ui.ComposeActivity"
+            android:name="com.example.twitter.ui.ComposeActivity"
+            android:parentActivityName="com.example.twitter.ui.MainActivity"
             android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".ui.SettingsActivity"
+            android:name="com.example.twitter.ui.SettingsActivity"
             android:label="@string/settings"
-            android:parentActivityName=".ui.MainActivity"
+            android:parentActivityName="com.example.twitter.ui.MainActivity"
             android:theme="@style/AppTheme.NoActionBar" />
 
-        <activity android:name=".ui.TweetDetailActivity"
+        <activity android:name="com.example.twitter.ui.ProfileActivity"
+            android:parentActivityName="com.example.twitter.ui.MainActivity"
+            android:theme="@style/AppTheme.NoActionBar"/>
+
+        <activity android:name="com.example.twitter.ui.TweetDetailActivity"
             android:label="@string/tweet"
-            android:parentActivityName=".ui.MainActivity"
+            android:parentActivityName="com.example.twitter.ui.MainActivity"
             android:theme="@style/AppTheme.NoActionBar"/>
     </application>
 

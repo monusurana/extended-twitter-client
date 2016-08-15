@@ -25,6 +25,7 @@ package com.example.twitter.utils;
  */
 
 import android.database.Cursor;
+import android.database.DataSetObserver;
 import android.support.v7.widget.RecyclerView;
 
 public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
@@ -41,7 +42,7 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
         boolean cursorPresent = c != null;
         mCursor = c;
         mDataValid = cursorPresent;
-        mRowIDColumn = cursorPresent ? c.getColumnIndexOrThrow("Id") : -1;
+        mRowIDColumn = cursorPresent ? c.getColumnIndexOrThrow("tweetid") : -1;
         setHasStableIds(true);
     }
 
@@ -115,7 +116,7 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
         Cursor oldCursor = mCursor;
         mCursor = newCursor;
         if (newCursor != null) {
-            mRowIDColumn = newCursor.getColumnIndexOrThrow("Id");
+            mRowIDColumn = newCursor.getColumnIndexOrThrow("tweetid");
             mDataValid = true;
             // notify the observers about the new cursor
             notifyDataSetChanged();
@@ -139,6 +140,23 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
      */
     public CharSequence convertToString(Cursor cursor) {
         return cursor == null ? "" : cursor.toString();
+    }
+
+    private class NotifyingDataSetObserver extends DataSetObserver {
+        @Override
+        public void onChanged() {
+            super.onChanged();
+            mDataValid = true;
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public void onInvalidated() {
+            super.onInvalidated();
+            mDataValid = false;
+            notifyDataSetChanged();
+            //There is no notifyDataSetInvalidated() method in RecyclerView.Adapter
+        }
     }
 }
 

@@ -4,6 +4,7 @@ package com.example.twitter.utils;
  * Created by monusurana on 8/3/16.
  */
 
+import android.graphics.Color;
 import android.text.format.DateUtils;
 
 import java.text.ParseException;
@@ -60,10 +61,19 @@ public class Utils {
         } else if (date.contains(",")) {
             String dateArray[] = date.split(" ");
 
-            return dateArray[1].substring(0, dateArray[1].length() - 1) + " " + dateArray[0] + " " + dateArray[2].substring(0, 2);
+            return dateArray[1].substring(0, dateArray[1].length() - 1) + " " + dateArray[0] + " " + dateArray[2].substring(2, 4);
         }
 
         return date;
+    }
+
+    public static boolean isColorDark(int color){
+        double darkness = 1-(0.299* Color.red(color) + 0.587*Color.green(color) + 0.114*Color.blue(color))/255;
+        if(darkness < 0.3){
+            return false; // It's a light color
+        }else{
+            return true; // It's a dark color
+        }
     }
 }
 

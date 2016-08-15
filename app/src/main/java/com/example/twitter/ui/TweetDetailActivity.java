@@ -12,17 +12,23 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.example.twitter.R;
-import com.example.twitter.model.Mentions;
+import com.example.twitter.app.TwitterApplication;
 import com.example.twitter.model.Tweet;
 import com.example.twitter.model.User;
+import com.example.twitter.network.TwitterClient;
 import com.example.twitter.utils.Constants;
 import com.example.twitter.utils.RoundedCornersTransformation;
+import com.loopj.android.http.JsonHttpResponseHandler;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.parceler.Parcels;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import cz.msebera.android.httpclient.Header;
+import timber.log.Timber;
 
 public class TweetDetailActivity extends AppCompatActivity {
 
@@ -46,13 +52,16 @@ public class TweetDetailActivity extends AppCompatActivity {
     TextView mTvRetweetsCount;
     @BindView(R.id.tvLikesCount)
     TextView mTvLikesCount;
-
-    Constants.Type mType;
     @BindView(R.id.ivReply)
     ImageView mIvReply;
+    @BindView(R.id.ivRetweet)
+    ImageView mIvRetweet;
+    @BindView(R.id.ivLike)
+    ImageView mIvLike;
 
-    User mUser;
-    Long mTweetId;
+    private User mUser;
+    private Long mTweetId;
+    private Tweet t;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,89 +72,60 @@ public class TweetDetailActivity extends AppCompatActivity {
         initToolbar();
 
         Long tweetid = getIntent().getLongExtra(Constants.TWEETID, 0L);
-        mType = (Constants.Type) getIntent().getSerializableExtra(Constants.TYPE);
 
-        if (mType == Constants.Type.HOME) {
-            Tweet t = Tweet.getTweet(tweetid);
+        t = Tweet.getTweet(tweetid);
 
-            mUser = t.getUser();
-            mTweetId = t.getId();
+        mUser = t.getUser();
+        mTweetId = t.getId();
 
-            mTvUserName.setText(t.getUser().getName());
-            mTvDescription.setText(t.getText());
-            mTvTwitterHandle.setText(t.getUser().getScreen_name());
+        mTvUserName.setText(t.getUser().getName());
+        mTvDescription.setText(t.getText());
+        mTvTwitterHandle.setText(t.getUser().getTwitterScreen_name());
 
-            if (t.isWas_retweeted()) {
-                mIvRetweeted.setVisibility(View.VISIBLE);
-                mTvRetweetedBy.setVisibility(View.VISIBLE);
+        if (t.isWasRetweeted()) {
+            mIvRetweeted.setVisibility(View.VISIBLE);
+            mTvRetweetedBy.setVisibility(View.VISIBLE);
 
-                mTvRetweetedBy.setText(t.getRetweet_user() + " Retweeted");
-            } else {
-                mIvRetweeted.setVisibility(View.GONE);
-                mTvRetweetedBy.setVisibility(View.GONE);
-            }
-
-            mTvRetweetsCount.setText(String.valueOf(t.getRetweet_count()));
-            mTvLikesCount.setText(String.valueOf(t.getFavorite_count()));
-
-            if (t.getMedia_url_https() != null) {
-                mIvMedia.setVisibility(View.VISIBLE);
-                Glide.with(mIvMedia.getContext())
-                        .load(t.getMedia_url_https())
-                        .centerCrop()
-                        .crossFade()
-                        .into(mIvMedia);
-            } else {
-                mIvMedia.setVisibility(View.GONE);
-            }
-
-            Glide.with(mImUserImage.getContext())
-                    .load(t.getUser().getProfile_image_url_https())
-                    .centerCrop()
-                    .bitmapTransform(new RoundedCornersTransformation(mImUserImage.getContext(), 8, 2))
-                    .crossFade()
-                    .into(mImUserImage);
+            mTvRetweetedBy.setText(t.getRetweetedby_user() + " Retweeted");
         } else {
-            Mentions t = Mentions.getTweet(tweetid);
-
-            mUser = t.getUser();
-            mTweetId = t.getId();
-
-            mTvUserName.setText(t.getUser().getName());
-            mTvDescription.setText(t.getText());
-            mTvTwitterHandle.setText(t.getUser().getScreen_name());
-
-            if (t.isWas_retweeted()) {
-                mIvRetweeted.setVisibility(View.VISIBLE);
-                mTvRetweetedBy.setVisibility(View.VISIBLE);
-
-                mTvRetweetedBy.setText(t.getRetweet_user() + " Retweeted");
-            } else {
-                mIvRetweeted.setVisibility(View.GONE);
-                mTvRetweetedBy.setVisibility(View.GONE);
-            }
-
-            mTvRetweetsCount.setText(String.valueOf(t.getRetweet_count()));
-            mTvLikesCount.setText(String.valueOf(t.getFavorite_count()));
-
-            if (t.getMedia_url_https() != null) {
-                mIvMedia.setVisibility(View.VISIBLE);
-                Glide.with(mIvMedia.getContext())
-                        .load(t.getMedia_url_https())
-                        .centerCrop()
-                        .crossFade()
-                        .into(mIvMedia);
-            } else {
-                mIvMedia.setVisibility(View.GONE);
-            }
-
-            Glide.with(mImUserImage.getContext())
-                    .load(t.getUser().getProfile_image_url_https())
-                    .centerCrop()
-                    .bitmapTransform(new RoundedCornersTransformation(mImUserImage.getContext(), 8, 2))
-                    .crossFade()
-                    .into(mImUserImage);
+            mIvRetweeted.setVisibility(View.GONE);
+            mTvRetweetedBy.setVisibility(View.GONE);
         }
+
+        if (t.isFavorited()) {
+            mIvLike.setImageResource(R.drawable.ic_like_red);
+        } else {
+            mIvLike.setImageResource(R.drawable.ic_like);
+        }
+
+        if (t.isRetweeted()) {
+            mIvRetweet.setImageResource(R.drawable.ic_retweet_green);
+        } else {
+            mIvRetweet.setImageResource(R.drawable.ic_retweet);
+        }
+
+        mTvRetweetsCount.setText(String.valueOf(t.getRetweet_count()));
+        mTvLikesCount.setText(String.valueOf(t.getFavorite_count()));
+
+        if (t.getMedia_url_https() != null) {
+            mIvMedia.setVisibility(View.VISIBLE);
+            Glide.with(mIvMedia.getContext())
+                    .load(t.getMedia_url_https())
+                    .placeholder(R.color.colorAccent)
+                    .centerCrop()
+                    .crossFade()
+                    .into(mIvMedia);
+        } else {
+            mIvMedia.setVisibility(View.GONE);
+        }
+
+        Glide.with(mImUserImage.getContext())
+                .load(t.getUser().getProfile_image_url_https())
+                .centerCrop()
+                .placeholder(R.color.grey_200)
+                .bitmapTransform(new RoundedCornersTransformation(mImUserImage.getContext(), 8, 2))
+                .crossFade()
+                .into(mImUserImage);
     }
 
     private void initToolbar() {
@@ -164,6 +144,115 @@ public class TweetDetailActivity extends AppCompatActivity {
         i.putExtra(Constants.USER, Parcels.wrap(mUser));
         i.putExtra(Constants.TWEETID, mTweetId);
         startActivity(i);
+    }
+
+    @OnClick(R.id.imUserImage)
+    public void profile() {
+        Intent intent = new Intent(this, ProfileActivity.class);
+        intent.putExtra(Constants.SCREEN_NAME, mUser.getScreen_name());
+        startActivity(intent);
+    }
+
+    @OnClick(R.id.ivRetweet)
+    public void reTweet() {
+        TwitterClient client = TwitterApplication.getRestClient();
+        client.retweet(mTweetId.toString(), new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                super.onSuccess(statusCode, headers, response);
+                Timber.d("Retweet Success: " + response.toString());
+
+                Tweet.findOrCreateFromJson(response, null);
+
+                if (!t.isRetweeted()) {
+                    mIvRetweet.setImageResource(R.drawable.ic_retweet_green);
+                } else {
+                    mIvRetweet.setImageResource(R.drawable.ic_retweet);
+                }
+            }
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
+                super.onSuccess(statusCode, headers, response);
+
+                Tweet.fromJSON(response, null);
+
+                if (!t.isRetweeted()) {
+                    mIvRetweet.setImageResource(R.drawable.ic_retweet_green);
+                } else {
+                    mIvRetweet.setImageResource(R.drawable.ic_retweet);
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+                super.onFailure(statusCode, headers, throwable, errorResponse);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject
+                    errorResponse) {
+                super.onFailure(statusCode, headers, throwable, errorResponse);
+
+                Timber.d("Failure: " + errorResponse);
+            }
+        });
+    }
+
+    @OnClick(R.id.ivLike)
+    public void likeTweet() {
+        TwitterClient client = TwitterApplication.getRestClient();
+        JsonHttpResponseHandler likeJsonHttpResponseHandler = new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                super.onSuccess(statusCode, headers, response);
+                Timber.d("Like Tweet Success: " + response.toString());
+
+                Tweet.findOrCreateFromJson(response, null);
+
+                if (!t.isFavorited()) {
+                    mIvLike.setImageResource(R.drawable.ic_like_red);
+                } else {
+                    mIvLike.setImageResource(R.drawable.ic_like);
+                }
+            }
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
+                super.onSuccess(statusCode, headers, response);
+
+                Timber.d("Like Tweet Success: " + response.toString());
+
+                Tweet.fromJSON(response, null);
+
+                if (!t.isFavorited()) {
+                    mIvLike.setImageResource(R.drawable.ic_like_red);
+                } else {
+                    mIvLike.setImageResource(R.drawable.ic_like);
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+                super.onFailure(statusCode, headers, throwable, errorResponse);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject
+                    errorResponse) {
+                super.onFailure(statusCode, headers, throwable, errorResponse);
+
+                Timber.d("Failure: " + errorResponse);
+            }
+        };
+
+        if (!t.isFavorited()) {
+            Timber.d("Liked");
+            client.likeTweet(mTweetId.toString(), likeJsonHttpResponseHandler);
+        } else {
+            Timber.d("UnLiked");
+            client.unlikeTweet(mTweetId.toString(), likeJsonHttpResponseHandler);
+        }
     }
 
     @Override

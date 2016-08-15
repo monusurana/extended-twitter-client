@@ -112,7 +112,7 @@ public class ComposeActivity extends AppCompatActivity {
         });
 
         if (mType == Constants.ComposeType.REPLY) {
-            mTvCompose.append(mUser.getScreen_name());
+            mTvCompose.append(mUser.getTwitterScreen_name());
             mTvCompose.setFocusable(true);
         }
 
@@ -155,7 +155,7 @@ public class ComposeActivity extends AppCompatActivity {
                 super.onSuccess(statusCode, headers, response);
                 Timber.d("Success: " + response.toString());
 
-                Tweet.findOrCreateFromJson(response);
+                Tweet.findOrCreateFromJson(response, null);
                 finish();
             }
 

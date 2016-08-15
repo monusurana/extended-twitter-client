@@ -2,6 +2,7 @@ package com.example.twitter.ui;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBar;
@@ -11,6 +12,7 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 import com.example.twitter.R;
+import com.example.twitter.app.TwitterApplication;
 import com.example.twitter.utils.Constants;
 
 import butterknife.BindView;
@@ -47,6 +49,11 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
+    private void startLoginActivity() {
+        Intent i = new Intent(this, LoginActivity.class);
+        startActivity(i);
+    }
+
     @OnClick(R.id.tvSignOut)
     public void signOut() {
         new AlertDialog.Builder(this)
@@ -55,7 +62,8 @@ public class SettingsActivity extends AppCompatActivity {
                 .setMessage(R.string.log_out_message)
                 .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        // continue with delete
+                        TwitterApplication.getRestClient().clearAccessToken();
+                        startLoginActivity();
                     }
                 })
                 .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {

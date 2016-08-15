@@ -115,6 +115,7 @@ public class MainActivity extends AppCompatActivity
                     .load(PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.LOGGED_IN_USER_PROFILE, ""))
                     .centerCrop()
                     .bitmapTransform(new CropCircleTransformation(ivProfilePicture.getContext()))
+                    .placeholder(R.drawable.ic_profile_placeholder)
                     .crossFade()
                     .into(ivProfilePicture);
         }
@@ -137,6 +138,7 @@ public class MainActivity extends AppCompatActivity
                         .centerCrop()
                         .bitmapTransform(new CropCircleTransformation(ivProfilePicture.getContext()))
                         .crossFade()
+                        .placeholder(R.drawable.ic_profile_placeholder)
                         .into(ivProfilePicture);
 
                 saveUser(user);
@@ -199,6 +201,9 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_profile) {
+            Intent intent = new Intent(this, ProfileActivity.class);
+            intent.putExtra(Constants.SCREEN_NAME, PreferenceManager.getDefaultSharedPreferences(this).getString(Constants.LOGGED_IN_USER_SCREEN_NAME, null));
+            startActivity(intent);
 
         } else if (id == R.id.nav_lists) {
 
@@ -225,8 +230,8 @@ public class MainActivity extends AppCompatActivity
     private void setupViewPager(ViewPager viewPager) {
         final ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager(), this);
 
-        adapter.addFrag(HomeFragment.newInstance(Constants.Type.HOME), "Home", R.drawable.tab_icon_home);
-        adapter.addFrag(HomeFragment.newInstance(Constants.Type.NOTIFICATIONS), "Notifications", R.drawable.tab_icon_notifications);
+        adapter.addFrag(HomeFragment.newInstance(Constants.Type.HOME, null), "Home", R.drawable.tab_icon_home);
+        adapter.addFrag(HomeFragment.newInstance(Constants.Type.NOTIFICATIONS, null), "Notifications", R.drawable.tab_icon_notifications);
 
         viewPager.setAdapter(adapter);
         setTitle(adapter.getTitle(0));

@@ -5,6 +5,7 @@ package com.example.twitter.ui;
  */
 
 import android.database.Cursor;
+import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,23 +16,39 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.example.twitter.R;
 import com.example.twitter.utils.CursorRecyclerViewAdapter;
+import com.example.twitter.utils.PatternEditableBuilder;
 import com.example.twitter.utils.RoundedCornersTransformation;
 import com.example.twitter.utils.Utils;
 
+import java.util.regex.Pattern;
+
+import butterknife.BindColor;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import timber.log.Timber;
 
 public class HomeRecyclerViewAdapter extends CursorRecyclerViewAdapter<RecyclerView.ViewHolder> {
-    private static final int TYPE_DEFAULT = 0;
+    @BindColor(R.color.red_like)
+    int mRedLike;
+    @BindColor(R.color.colorPrimaryDark)
+    int mPrimaryDark;
+    @BindColor(R.color.green_retweet)
+    int mGreenRetweet;
 
+    private static final int TYPE_DEFAULT = 0;
 
     private OnItemClickListener mListener;
 
     public interface OnItemClickListener {
         void onItemClick(Long tweetid, View parent);
 
+        void onProfileClick(String screenName);
+
         void onReplyClick(Long tweetid, View parent);
+
+        void onRetweetClick(Long tweetid, boolean retweeted);
+
+        void onLikeClick(Long tweetid, boolean like);
     }
 
     public void setOnItemClickListener(OnItemClickListener listener) {
@@ -60,18 +77,46 @@ public class HomeRecyclerViewAdapter extends CursorRecyclerViewAdapter<RecyclerV
         int wasRetweeted = cursor.getInt(cursor.getColumnIndex("was_retweeted"));
 
         final Long tweetid = cursor.getLong(cursor.getColumnIndex("tweetid"));
+        final String screenName = cursor.getString(cursor.getColumnIndex("screen_name"));
 
         if (wasRetweeted == 1) {
             ((TweetViewHolder) holder).ivRetweeted.setVisibility(View.VISIBLE);
             ((TweetViewHolder) holder).tvRetweetedBy.setVisibility(View.VISIBLE);
-
-            ((TweetViewHolder) holder).tvRetweetedBy.setText(cursor.getString(cursor.getColumnIndex("retweet_user")) + " Retweeted");
+            ((TweetViewHolder) holder).tvRetweetedBy.setText(cursor.getString(cursor.getColumnIndex("retweetedby_user")) + " Retweeted");
         } else {
             ((TweetViewHolder) holder).ivRetweeted.setVisibility(View.GONE);
             ((TweetViewHolder) holder).tvRetweetedBy.setVisibility(View.GONE);
         }
 
+        final int favorited = cursor.getInt(cursor.getColumnIndex("favorited"));
+
+        if (favorited == 1) {
+            ((TweetViewHolder) holder).ivLike.setImageResource(R.drawable.ic_like_red);
+        } else {
+            ((TweetViewHolder) holder).ivLike.setImageResource(R.drawable.ic_like);
+        }
+
+        final int retweeted = cursor.getInt(cursor.getColumnIndex("retweeted"));
+
+        if (retweeted == 1) {
+            ((TweetViewHolder) holder).ivRetweet.setImageResource(R.drawable.ic_retweet_green);
+        } else {
+            ((TweetViewHolder) holder).ivRetweet.setImageResource(R.drawable.ic_retweet);
+        }
+
         ((TweetViewHolder) holder).tvText.setText(cursor.getString(cursor.getColumnIndex("text")));
+
+
+        new PatternEditableBuilder().
+                addPattern(Pattern.compile("\\@(\\w+)"), Color.BLUE,
+                        new PatternEditableBuilder.SpannableClickedListener() {
+                            @Override
+                            public void onSpanClicked(String text) {
+                                Timber.d("Span clicked " + text.replace("@", ""));
+                                mListener.onProfileClick(text.replace("@", ""));
+                            }
+                        }).into(((TweetViewHolder) holder).tvText);
+
         ((TweetViewHolder) holder).tvTime.setText(Utils.getRelativeTimeAgo(cursor.getString(cursor.getColumnIndex("created_at"))));
         ((TweetViewHolder) holder).tvHandle.setText("@" + cursor.getString(cursor.getColumnIndex("screen_name")));
         ((TweetViewHolder) holder).tvUserName.setText(cursor.getString(cursor.getColumnIndex("name")));
@@ -80,13 +125,13 @@ public class HomeRecyclerViewAdapter extends CursorRecyclerViewAdapter<RecyclerV
 
         String mediaUrl = cursor.getString(cursor.getColumnIndex("media_url_https"));
 
-        Timber.d(mediaUrl);
         if (mediaUrl != null) {
             ((TweetViewHolder) holder).ivMedia.setVisibility(View.VISIBLE);
             Glide.with(((TweetViewHolder) holder).ivMedia.getContext())
                     .load(mediaUrl)
                     .centerCrop()
                     .crossFade()
+                    .placeholder(R.color.grey_200)
                     .into(((TweetViewHolder) holder).ivMedia);
         } else {
             ((TweetViewHolder) holder).ivMedia.setVisibility(View.GONE);
@@ -97,12 +142,35 @@ public class HomeRecyclerViewAdapter extends CursorRecyclerViewAdapter<RecyclerV
                 .centerCrop()
                 .bitmapTransform(new RoundedCornersTransformation(((TweetViewHolder) holder).imUserImage.getContext(), 8, 2))
                 .crossFade()
+                .placeholder(R.drawable.ic_profile_placeholder)
                 .into(((TweetViewHolder) holder).imUserImage);
+
+        ((TweetViewHolder) holder).imUserImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mListener.onProfileClick(screenName);
+            }
+        });
 
         ((TweetViewHolder) holder).tvText.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mListener.onItemClick(tweetid, v);
+            }
+        });
+
+
+        ((TweetViewHolder) holder).ivRetweet.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mListener.onRetweetClick(tweetid, Boolean.valueOf(String.valueOf(retweeted)));
+            }
+        });
+
+        ((TweetViewHolder) holder).ivLike.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mListener.onLikeClick(tweetid, Boolean.valueOf(String.valueOf(favorited)));
             }
         });
 

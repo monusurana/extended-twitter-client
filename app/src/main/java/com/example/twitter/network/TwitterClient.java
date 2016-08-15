@@ -46,9 +46,52 @@ public class TwitterClient extends OAuthBaseClient {
         getClient().get(apiUrl, params, handler);
     }
 
+    public void getUser(String screenName, AsyncHttpResponseHandler handler) {
+        String apiUrl = getApiUrl("users/search.json");
+        RequestParams params = new RequestParams();
+        params.put("q", screenName);
+        getClient().get(apiUrl, params, handler);
+    }
+
+    public void getUserTimeline(String screenName, int page, AsyncHttpResponseHandler handler) {
+        String apiUrl = getApiUrl("statuses/user_timeline.json");
+        RequestParams params = new RequestParams();
+        params.put("screen_name", screenName);
+        params.put("page", String.valueOf(page));
+        getClient().get(apiUrl, params, handler);
+    }
+
+    public void getLikes(String screenName, int page, AsyncHttpResponseHandler handler) {
+        String apiUrl = getApiUrl("favorites/list.json");
+        RequestParams params = new RequestParams();
+        params.put("screen_name", screenName);
+        params.put("page", String.valueOf(page));
+        getClient().get(apiUrl, params, handler);
+    }
+
     public void getUserProfile(AsyncHttpResponseHandler handler) {
         String apiUrl = getApiUrl("account/verify_credentials.json");
         getClient().get(apiUrl, null, handler);
+    }
+
+    public void retweet(String tweetid, AsyncHttpResponseHandler handler) {
+        String api_url = getApiUrl("statuses/retweet/" + tweetid + ".json");
+        RequestParams params = new RequestParams();
+        getClient().post(api_url, params, handler);
+    }
+
+    public void likeTweet(String tweetid, AsyncHttpResponseHandler handler) {
+        String api_url = getApiUrl("favorites/create.json");
+        RequestParams params = new RequestParams();
+        params.put("id", tweetid);
+        getClient().post(api_url, params, handler);
+    }
+
+    public void unlikeTweet(String tweetid, AsyncHttpResponseHandler handler) {
+        String api_url = getApiUrl("favorites/destroy.json");
+        RequestParams params = new RequestParams();
+        params.put("id", tweetid);
+        getClient().post(api_url, params, handler);
     }
 
     public void postTweet(String body, String tweetId, AsyncHttpResponseHandler handler) {

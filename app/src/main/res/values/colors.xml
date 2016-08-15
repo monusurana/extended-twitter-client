@@ -3,9 +3,12 @@
     <color name="colorPrimary">@android:color/white</color>
     <color name="colorPrimaryDark">#607D8B</color>
     <color name="colorAccent">#1DA1F2</color>
+    <color name="colorPrimaryLight">#B3C3CB</color>
     <color name="grey_200">#EEEEEE</color>
     <color name="grey_400">#BDBDBD</color>
     <color name="red_500">#F44336</color>
     <color name="blue_300">#64B5F6</color>
     <color name="blue_200">#90CAF9</color>
+    <color name="red_like">#E2264D</color>
+    <color name="green_retweet">#19CF86</color>
 </resources>
