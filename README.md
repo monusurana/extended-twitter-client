@@ -50,7 +50,7 @@ The following **additional** features are implemented:
 
 Here's a walkthrough of implemented user stories:
 
-<img src='http://imgur.com/placeholder.gif' width='300'/>
+<img src='http://i.imgur.com/lEc1PIz.gif' width='300'/>
 
 ## Notes
 
